@@ -21,3 +21,4 @@ typing_extensions==4.10.0
 Werkzeug==3.0.1
 WTForms==3.0.1
 zipp==3.14.0
+is-safe-url==1.0
