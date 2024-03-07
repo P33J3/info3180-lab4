@@ -1,6 +1,6 @@
 import os
 from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash
@@ -45,6 +45,19 @@ def upload():
 
     return render_template('upload.html', uploadForm=uploadForm)
 
+@app.route('/upload/<filename>')
+def get_image(filename):
+    root_dir = os.getcwd()
+
+    return send_from_directory(os.path.join(root_dir, app.config['UPLOAD_FOLDER']), filename)
+
+@app.route('/files')
+def files():
+
+    image_uploads = get_photo_listing()
+
+    return render_template('files.html', image_uploads=image_uploads)
+
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
@@ -87,6 +100,13 @@ def login():
     flash_errors(form)
     return render_template('login.html', form=form)
 
+@app.route('/logout')
+@login_required
+def logout():
+    login_user()
+    flash("You are logged out.", 'success')
+    return redirect(url_for('home'))
+
 # user_loader callback. This callback is used to reload the user object from
 # the user ID stored in the session
 @login_manager.user_loader
@@ -105,6 +125,19 @@ def flash_errors(form):
                 getattr(form, field).label.text,
                 error
 ), 'danger')
+
+def get_photo_listing():
+    rootdir = os.getcwd()
+    uploads_folder = app.config['UPLOAD_FOLDER']
+    uploads_path = os.path.join(rootdir, uploads_folder)
+    image_uploads = []
+
+    if os.path.exists(uploads_path) and os.path.isdir(uploads_path):
+        for subdir, dirs, files in os.walk(uploads_path):
+            for file in files:
+                image_uploads.append(os.path.join(subdir, file))
+
+    return image_uploads
 
 @app.route('/<file_name>.txt')
 def send_text_file(file_name):
